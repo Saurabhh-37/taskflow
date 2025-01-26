@@ -18,7 +18,7 @@ const CustomAppBar = ({ toggleNavBar }) => {
   };
 
   // Check if the current path is "/tasks" or "/feeds"
-  const showLogoutButton = location.pathname === '/tasks' || location.pathname === '/feeds';
+  const showLogoutButton = location.pathname === '/tasks' || location.pathname === '/feed';
 
   return (
     <AppBar position="fixed">

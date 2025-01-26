@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ImageList,
   ImageListItem,
@@ -8,29 +8,48 @@ import {
   CardMedia,
   CardContent,
   Typography,
-  Fab,
   Button,
   TextField,
+  Fab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-
-// Import images from the assets folder
-import Image1 from "../assets/landscape1.jpg";
-import Image2 from "../assets/landscape2.jpg";
-import Image3 from "../assets/landscape3.jpg";
+import { ref, listAll, getDownloadURL, uploadBytes } from "firebase/storage";
+import { storage } from "../firebaseConfig"; // Your Firebase storage instance
+import { getAuth } from "firebase/auth"; // Firebase authentication import
+import { db } from "../firebaseConfig"; // Firebase Firestore import
+import { collection, addDoc } from "firebase/firestore"; // Firestore methods
 
 const Feed = () => {
-  const [images, setImages] = useState([
-    { id: 1, url: Image1, caption: "Beautiful Landscape 1" },
-    { id: 2, url: Image2, caption: "Beautiful Landscape 2" },
-    { id: 3, url: Image3, caption: "Beautiful Landscape 3" },
-  ]);
-
+  const [images, setImages] = useState([]);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [formImage, setFormImage] = useState(null);
   const [formCaption, setFormCaption] = useState("");
+
+  const auth = getAuth(); // Get Firebase auth instance
+  const user = auth.currentUser; // Get current authenticated user
+
+  useEffect(() => {
+    if (user) {
+      // Fetch image URLs from Firebase Storage on component mount for the authenticated user
+      const fetchImages = async () => {
+        const imagesRef = ref(storage, `images/${user.email}/`); // User-specific folder
+        const imageList = await listAll(imagesRef); // List all images in the user's folder
+
+        const imageUrls = await Promise.all(
+          imageList.items.map(async (imageRef) => {
+            const url = await getDownloadURL(imageRef); // Get the download URL for each image
+            return { url };
+          })
+        );
+
+        setImages(imageUrls); // Update state with the image URLs
+      };
+
+      fetchImages();
+    }
+  }, [user]);
 
   const handleImageDialogOpen = (image) => {
     setSelectedImage(image);
@@ -52,13 +71,20 @@ const Feed = () => {
     setFormCaption("");
   };
 
-  const handleFormSubmit = (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    if (formImage && formCaption) {
+    if (user && formImage && formCaption) {
+      const imageRef = ref(storage, `images/${user.email}/${formImage.name}`); // User-specific folder and image name
+
+      // Upload the image to Firebase Storage
+      await uploadBytes(imageRef, formImage);
+
+      // Get the download URL of the uploaded image
+      const imageUrl = await getDownloadURL(imageRef);
+
       const newImage = {
-        id: images.length + 1,
-        url: URL.createObjectURL(formImage),
+        url: imageUrl, // Use the Firebase storage URL
         caption: formCaption,
       };
 
@@ -86,9 +112,9 @@ const Feed = () => {
 
       {/* Image List Section */}
       <ImageList cols={3} gap={16}>
-        {images.map((image) => (
+        {images.map((image, index) => (
           <ImageListItem
-            key={image.id}
+            key={index}
             onClick={() => handleImageDialogOpen(image)}
             style={{
               cursor: "pointer",
@@ -117,10 +143,11 @@ const Feed = () => {
       {/* Dialog to display selected image */}
       <Dialog open={imageDialogOpen} onClose={handleImageDialogClose} maxWidth="sm" fullWidth>
         <DialogContent
-        sx={{
-          backgroundColor: "#F2EFE7", // Light gray background
-          borderRadius: "8px",
-        }}>
+          sx={{
+            backgroundColor: "#F2EFE7", // Light gray background
+            borderRadius: "8px",
+          }}
+        >
           <Card
             style={{
               boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
@@ -144,8 +171,7 @@ const Feed = () => {
 
       {/* Dialog with Form for Upload */}
       <Dialog open={formDialogOpen} onClose={handleFormDialogClose} maxWidth="sm" fullWidth>
-        <DialogContent
-        >
+        <DialogContent>
           <form onSubmit={handleFormSubmit} style={{ display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" gutterBottom style={{ textAlign: "center", marginBottom: "20px" }}>
               Upload Image
