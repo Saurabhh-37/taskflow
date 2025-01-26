@@ -97,7 +97,7 @@ const Login = () => {
           <Button
             onClick={handleGoogleLogin}
             variant="outlined"
-            color="secondary"
+            color="primary"
             fullWidth
             style={{ marginTop: '1rem' }}
           >

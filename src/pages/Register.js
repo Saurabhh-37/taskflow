@@ -97,7 +97,7 @@ const Register = () => {
           <Button
             onClick={handleGoogleRegister}
             variant="outlined"
-            color="secondary"
+            color="primary"
             fullWidth
             style={{ marginTop: '1rem' }}
           >
