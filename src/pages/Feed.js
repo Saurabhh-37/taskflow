@@ -16,8 +16,6 @@ import AddIcon from "@mui/icons-material/Add";
 import { ref, listAll, getDownloadURL, uploadBytes } from "firebase/storage";
 import { storage } from "../firebaseConfig"; // Your Firebase storage instance
 import { getAuth } from "firebase/auth"; // Firebase authentication import
-import { db } from "../firebaseConfig"; // Firebase Firestore import
-import { collection, addDoc } from "firebase/firestore"; // Firestore methods
 
 const Feed = () => {
   const [images, setImages] = useState([]);
